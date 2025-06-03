@@ -3,6 +3,9 @@ import requests
 from dotenv import load_dotenv
 from collections import defaultdict
 from datetime import datetime, timezone
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import Dict, List, Optional
 
 load_dotenv()
 API_KEY = os.getenv("ETHERSCAN_API_KEY")
@@ -11,6 +14,16 @@ CHAIN_ID = 56
 
 TARGET_DATE = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 target_date = datetime.now(timezone.utc).date()
+
+app = FastAPI(
+    title="BSC Wallet Transaction Tracker API",
+    description="API for tracking BEP-20 token transactions on BSC",
+    version="1.0.0"
+)
+
+class TransactionResponse(BaseModel):
+    transactions: List[dict]
+    summary: Dict[str, dict]
 
 def fetch_token_transfers(chain_id, address, target_date, start_block):
     all_txs = []
@@ -122,11 +135,23 @@ def print_transaction_details(txs):
 
         print(f"{direction} {value:.4f} {symbol} to/from {counterparty}")
 
-if __name__ == "__main__":
-    print(f"📡 查詢地址 {ADDRESS} 在 {TARGET_DATE}（UTC）的交易...")
-    start_block = get_block_number_by_date(TARGET_DATE)
-    txs = fetch_token_transfers(CHAIN_ID, ADDRESS, target_date, start_block)
+@app.get("/transactions/{wallet_address}", response_model=TransactionResponse)
+async def get_transactions(wallet_address: str):
+    try:
+        target_date = datetime.now(timezone.utc).date()
+        date_str = target_date.strftime("%Y-%m-%d")
+        
+        start_block = get_block_number_by_date(date_str)
+        txs = fetch_token_transfers(CHAIN_ID, wallet_address, target_date, start_block)
+        summary = summarize_txs(txs)
+        
+        return TransactionResponse(
+            transactions=txs,
+            summary=summary
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    print_transaction_details(txs)
-    summary = summarize_txs(txs)
-    print_summary(summary, TARGET_DATE)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
