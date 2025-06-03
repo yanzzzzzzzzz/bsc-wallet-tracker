@@ -4,6 +4,10 @@ from dotenv import load_dotenv
 from collections import defaultdict
 from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
+from fastapi.requests import Request
 from pydantic import BaseModel
 from typing import Dict, List, Optional
 import uvicorn
@@ -21,6 +25,10 @@ app = FastAPI(
     description="API for tracking BEP-20 token transactions on BSC",
     version="1.0.0"
 )
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+templates = Jinja2Templates(directory="templates")
 
 class TransactionResponse(BaseModel):
     transactions: List[dict]
@@ -50,8 +58,7 @@ def fetch_token_transfers(chain_id, address, target_date, start_block):
         data = response.json()
 
         if data.get("status") != "1":
-            print(f"⚠️ API 錯誤：{data.get('message')}")
-            break
+            raise HTTPException(status_code=400, detail=f"API 錯誤：{data.get('message')}")
 
         txs = data["result"]
         if not txs:
@@ -112,7 +119,7 @@ def get_block_number_by_date(date_str):
     data = response.json()
 
     if data.get("status") != "1":
-        raise Exception(f"❌ 無法取得起始區塊：{data.get('message')}")
+        raise HTTPException(status_code=400, detail=f"無法取得起始區塊：{data.get('message')}")
     
     print(f"🔢 起始區塊（UTC {date_str}）: {data['result']}")
     return int(data["result"])
@@ -135,6 +142,16 @@ def print_transaction_details(txs):
         counterparty = to_addr if direction == "🔻 Sent" else from_addr
 
         print(f"{direction} {value:.4f} {symbol} to/from {counterparty}")
+
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request, wallet_address: str = None):
+    """
+    返回主頁，可選帶入錢包地址
+    """
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "wallet_address": wallet_address
+    })
 
 @app.get("/transactions/{wallet_address}", response_model=TransactionResponse)
 async def get_transactions(wallet_address: str):

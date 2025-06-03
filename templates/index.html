@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BSC 錢包交易追蹤器</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>BSC 錢包交易追蹤器</h1>
+
+      <div class="search-box">
+        <form id="searchForm">
+          <input
+            type="text"
+            id="walletAddress"
+            placeholder="請輸入 BSC 錢包地址"
+            value="{{ wallet_address if wallet_address else '' }}"
+            required
+          />
+          <button type="submit">查詢</button>
+        </form>
+      </div>
+
+      <div id="loading" class="loading" style="display: none">載入中...</div>
+
+      <div id="error" class="error" style="display: none"></div>
+
+      <div id="results" style="display: none">
+        <h2>今日交易記錄</h2>
+
+        <div class="summary-section">
+          <h3>交易彙總</h3>
+          <div id="summary"></div>
+        </div>
+
+        <div class="transactions-section">
+          <h3>交易明細</h3>
+          <div id="transactions"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 更新 URL 的函數
+      function updateURL(walletAddress) {
+        const url = new URL(window.location.href);
+        if (walletAddress) {
+          url.searchParams.set("wallet_address", walletAddress);
+        } else {
+          url.searchParams.delete("wallet_address");
+        }
+        window.history.pushState({}, "", url);
+      }
+
+      // 查詢交易記錄的函數
+      async function fetchTransactions(walletAddress) {
+        const loading = document.getElementById("loading");
+        const error = document.getElementById("error");
+        const results = document.getElementById("results");
+        const summary = document.getElementById("summary");
+        const transactions = document.getElementById("transactions");
+
+        // 顯示載入狀態
+        loading.style.display = "block";
+        error.style.display = "none";
+        results.style.display = "none";
+
+        try {
+          const response = await fetch(`/transactions/${walletAddress}`);
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.detail || "查詢失敗");
+          }
+
+          // 顯示彙總資訊
+          let summaryHtml =
+            "<table><tr><th>代幣</th><th>交易次數</th><th>總數量</th></tr>";
+          for (const [symbol, info] of Object.entries(data.summary)) {
+            summaryHtml += `
+                      <tr>
+                          <td>${symbol}</td>
+                          <td>${info.count}</td>
+                          <td>${info.total.toFixed(4)}</td>
+                      </tr>
+                  `;
+          }
+          summaryHtml += "</table>";
+          summary.innerHTML = summaryHtml;
+
+          // 顯示交易明細
+          let transactionsHtml =
+            "<table><tr><th>時間</th><th>代幣</th><th>數量</th><th>方向</th><th>交易地址</th></tr>";
+          for (const tx of data.transactions) {
+            const timestamp = new Date(tx.timeStamp * 1000).toLocaleString(
+              "zh-TW"
+            );
+            const value = (
+              parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal))
+            ).toFixed(4);
+            const direction =
+              tx.from.toLowerCase() === walletAddress.toLowerCase()
+                ? "發送"
+                : "接收";
+            const counterparty = direction === "發送" ? tx.to : tx.from;
+
+            transactionsHtml += `
+                      <tr>
+                          <td>${timestamp}</td>
+                          <td>${tx.tokenSymbol}</td>
+                          <td>${value}</td>
+                          <td>${direction}</td>
+                          <td>${counterparty}</td>
+                      </tr>
+                  `;
+          }
+          transactionsHtml += "</table>";
+          transactions.innerHTML = transactionsHtml;
+
+          results.style.display = "block";
+        } catch (err) {
+          error.textContent = err.message;
+          error.style.display = "block";
+        } finally {
+          loading.style.display = "none";
+        }
+      }
+
+      // 表單提交處理
+      document
+        .getElementById("searchForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const walletAddress = document.getElementById("walletAddress").value;
+          updateURL(walletAddress);
+          await fetchTransactions(walletAddress);
+        });
+
+      // 頁面載入時，如果有錢包地址參數，自動查詢
+      const urlParams = new URLSearchParams(window.location.search);
+      const walletAddress = urlParams.get("wallet_address");
+      if (walletAddress) {
+        document.getElementById("walletAddress").value = walletAddress;
+        fetchTransactions(walletAddress);
+      }
+    </script>
+  </body>
+</html>
