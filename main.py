@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Dict, List, Optional
+import uvicorn
 
 load_dotenv()
 API_KEY = os.getenv("ETHERSCAN_API_KEY")
@@ -153,5 +154,4 @@ async def get_transactions(wallet_address: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
