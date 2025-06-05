@@ -15,6 +15,7 @@ import uvicorn
 load_dotenv()
 API_KEY = os.getenv("ETHERSCAN_API_KEY")
 ADDRESS = os.getenv("WALLET_ADDRESS")
+PORT = os.getenv("PORT")
 CHAIN_ID = 56
 
 TARGET_DATE = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -171,4 +172,4 @@ async def get_transactions(wallet_address: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="localhost", port=int(PORT) if PORT else 8100)
