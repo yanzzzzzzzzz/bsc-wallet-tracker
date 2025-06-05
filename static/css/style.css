@@ -186,17 +186,6 @@ tr:hover {
   align-items: center;
 }
 
-.funnel-icon {
-  width: 12px;
-  height: 12px;
-  margin-right: 0.25rem;
-  display: inline-flex;
-}
-
-.funnel-icon svg {
-  width: 100%;
-  height: 100%;
-}
 
 #progressText {
   text-align: center;

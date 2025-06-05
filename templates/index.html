@@ -73,11 +73,6 @@
           <h2>今日交易記錄</h2>
           <div class="filter-section">
             <label class="filter-label">
-              <span class="funnel-icon">
-                <svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M1 1h14L9 8v6l-2 1V8L1 1z"/>
-                </svg>
-              </span>
               <select id="directionFilter">
                 <option value="all">ALL</option>
                 <option value="buy" selected>BUY</option>
@@ -127,6 +122,16 @@
 
       let allTransactions = [];
       let currentWalletAddress = "";
+      let addressToSymbol = {};
+
+      function buildAddressMap(txs) {
+        addressToSymbol = {};
+        for (const tx of txs) {
+          if (tx.contractAddress && tx.tokenSymbol) {
+            addressToSymbol[tx.contractAddress.toLowerCase()] = tx.tokenSymbol;
+          }
+        }
+      }
 
       function applyFilters(txs) {
         const dir = document.getElementById("directionFilter").value;
@@ -161,12 +166,14 @@
           const shortHash = tx.hash
             ? tx.hash.substring(0, 6) + "..." + tx.hash.substring(tx.hash.length - 4)
             : "";
-          const shortFrom = tx.from
-            ? tx.from.substring(0, 6) + "..." + tx.from.substring(tx.from.length - 4)
-            : "";
-          const shortTo = tx.to
-            ? tx.to.substring(0, 6) + "..." + tx.to.substring(tx.to.length - 4)
-            : "";
+          const displayName = (addr) => {
+            if (!addr) return "";
+            const token = addressToSymbol[addr.toLowerCase()];
+            if (token) return token;
+            return addr.substring(0, 6) + "..." + addr.substring(addr.length - 4);
+          };
+          const shortFrom = displayName(tx.from);
+          const shortTo = displayName(tx.to);
           const fee = tx.gasPrice && tx.gasUsed
             ? ((parseInt(tx.gasPrice) * parseInt(tx.gasUsed)) / 1e18).toFixed(6)
             : "-";
@@ -256,6 +263,7 @@
 
           allTransactions = data.transactions;
           currentWalletAddress = walletAddress;
+          buildAddressMap(allTransactions);
           renderTransactions();
 
           results.style.display = "block";
