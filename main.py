@@ -95,34 +95,54 @@ def summarize_txs(txs):
     return summary
 
 def merge_transactions_by_hash(txs, wallet_address):
+    """Merge transfers that share the same hash.
+
+    The resulting entry will include the token names and amounts sent
+    from the wallet (``from``) and received by the wallet (``to``).
+    """
+
     merged = {}
     wallet_lower = wallet_address.lower()
     for tx in txs:
         h = tx["hash"]
-        m = merged.setdefault(h, {
-            "hash": h,
-            "timeStamp": tx["timeStamp"],
-            "gasPrice": tx.get("gasPrice"),
-            "gasUsed": tx.get("gasUsed"),
-            "from_tokens": set(),
-            "to_tokens": set(),
-        })
+        decimals = int(tx["tokenDecimal"])
+        value = int(tx["value"]) / (10 ** decimals)
+
+        m = merged.setdefault(
+            h,
+            {
+                "hash": h,
+                "timeStamp": tx["timeStamp"],
+                "gasPrice": tx.get("gasPrice"),
+                "gasUsed": tx.get("gasUsed"),
+                "from_token": "",
+                "to_token": "",
+                "from_amount": 0.0,
+                "to_amount": 0.0,
+            },
+        )
 
         if tx["from"].lower() == wallet_lower:
-            m["from_tokens"].add(tx["tokenSymbol"])
+            m["from_token"] = tx["tokenSymbol"]
+            m["from_amount"] += value
         if tx["to"].lower() == wallet_lower:
-            m["to_tokens"].add(tx["tokenSymbol"])
+            m["to_token"] = tx["tokenSymbol"]
+            m["to_amount"] += value
 
     result = []
     for m in merged.values():
-        result.append({
-            "hash": m["hash"],
-            "timeStamp": m["timeStamp"],
-            "from": ",".join(sorted(m["from_tokens"])) if m["from_tokens"] else "",
-            "to": ",".join(sorted(m["to_tokens"])) if m["to_tokens"] else "",
-            "gasPrice": m["gasPrice"],
-            "gasUsed": m["gasUsed"],
-        })
+        result.append(
+            {
+                "hash": m["hash"],
+                "timeStamp": m["timeStamp"],
+                "from": m["from_token"],
+                "to": m["to_token"],
+                "from_amount": m["from_amount"],
+                "to_amount": m["to_amount"],
+                "gasPrice": m["gasPrice"],
+                "gasUsed": m["gasUsed"],
+            }
+        )
 
     result.sort(key=lambda x: int(x["timeStamp"]), reverse=True)
     return result
