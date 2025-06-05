@@ -9,7 +9,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.requests import Request
 from pydantic import BaseModel
-from typing import Dict, List, Optional
+from typing import Dict, List
 import uvicorn
 
 load_dotenv()
@@ -94,6 +94,60 @@ def summarize_txs(txs):
         summary[symbol]["total"] += value
     return summary
 
+def transform_transactions(txs: List[dict], wallet_address: str) -> List[dict]:
+    """Group raw token transfer events by transaction hash and
+    return data in a simplified format."""
+    grouped: Dict[str, List[dict]] = defaultdict(list)
+    for tx in txs:
+        grouped[tx["hash"]].append(tx)
+
+    result: List[dict] = []
+    wallet_lower = wallet_address.lower()
+
+    for tx_hash, events in grouped.items():
+        events.sort(key=lambda x: int(x["timeStamp"]))
+        first = events[0]
+        ts = int(first.get("timeStamp", 0))
+
+        gas_used = int(first.get("gasUsed", 0))
+        gas_price = int(first.get("gasPrice", 0))
+        gas = gas_used * gas_price / 10**18
+
+        from_event = next((e for e in events if e.get("from", "").lower() == wallet_lower), None)
+        to_event = next((e for e in events if e.get("to", "").lower() == wallet_lower), None)
+
+        amount = 0.0
+        from_info = {}
+        if from_event:
+            decimals = int(from_event.get("tokenDecimal", 0))
+            amount = int(from_event.get("value", 0)) / (10 ** decimals)
+            from_info = {
+                "address": from_event.get("contractAddress"),
+                "symbol": from_event.get("tokenSymbol"),
+                "decimals": decimals,
+            }
+
+        to_info = {}
+        if to_event:
+            to_info = {
+                "address": to_event.get("contractAddress"),
+                "symbol": to_event.get("tokenSymbol"),
+                "decimals": int(to_event.get("tokenDecimal", 0)),
+            }
+
+        result.append({
+            "hash": tx_hash,
+            "timestamp": ts,
+            "gas": gas,
+            "status": "success",
+            "amount": amount,
+            "from": from_info,
+            "to": to_info,
+            "amountUSD": None,
+        })
+
+    return result
+
 def print_summary(summary, date_str):
     print(f"\n📅 {date_str} 的 Token 交易紀錄（UTC）：")
     if not summary:
@@ -163,9 +217,10 @@ async def get_transactions(wallet_address: str):
         start_block = get_block_number_by_date(date_str)
         txs = fetch_token_transfers(CHAIN_ID, wallet_address, target_date, start_block)
         summary = summarize_txs(txs)
-        
+        formatted_txs = transform_transactions(txs, wallet_address)
+
         return TransactionResponse(
-            transactions=txs,
+            transactions=formatted_txs,
             summary=summary
         )
     except Exception as e:
