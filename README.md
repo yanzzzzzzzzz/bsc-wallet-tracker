@@ -12,8 +12,8 @@ A simple Python tool to track token transactions on BSC (Binance Smart Chain) fo
 
 ```bash
 # Clone repository
-git clone https://github.com/your-repo/binance-wallet-query.git
-cd binance-wallet-query
+git clone https://github.com/your-repo/bsc-wallet-tracker.git
+cd bsc-wallet-tracker
 
 # Create virtual environment
 python -m venv env
