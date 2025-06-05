@@ -71,6 +71,23 @@
 
         <div id="results" style="display: none">
           <h2>今日交易記錄</h2>
+          <div class="filter-section">
+            <label class="filter-label">
+              <span class="funnel-icon">
+                <svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 1h14L9 8v6l-2 1V8L1 1z"/>
+                </svg>
+              </span>
+              <select id="directionFilter">
+                <option value="all">ALL</option>
+                <option value="buy" selected>BUY</option>
+                <option value="sell">SELL</option>
+              </select>
+            </label>
+            <label class="failed-checkbox">
+              <input type="checkbox" id="hideFailed" /> 隱藏交易失敗
+            </label>
+          </div>
 
           <div class="progress-section" id="progressSection" style="display: none">
             <h3>BSC-USD 進度</h3>
@@ -106,6 +123,58 @@
           url.searchParams.delete("wallet_address");
         }
         window.history.pushState({}, "", url);
+      }
+
+      let allTransactions = [];
+      let currentWalletAddress = "";
+
+      function applyFilters(txs) {
+        const dir = document.getElementById("directionFilter").value;
+        const hideFailed = document.getElementById("hideFailed").checked;
+
+        return txs.filter((tx) => {
+          const isSell = tx.from.toLowerCase() === currentWalletAddress.toLowerCase();
+          const isBuy = tx.to.toLowerCase() === currentWalletAddress.toLowerCase();
+
+          if (dir === "buy" && !isBuy) return false;
+          if (dir === "sell" && !isSell) return false;
+
+          const failed =
+            (tx.isError && tx.isError !== "0") ||
+            (tx.txreceipt_status && tx.txreceipt_status !== "1") ||
+            (tx.status && tx.status !== "1");
+          if (hideFailed && failed) return false;
+
+          return true;
+        });
+      }
+
+      function renderTransactions() {
+        const txContainer = document.getElementById("transactions");
+        const filtered = applyFilters(allTransactions);
+        let html =
+          "<table><tr><th>時間</th><th>Hash</th><th>From</th><th>To</th><th>Fee</th></tr>";
+        for (const tx of filtered) {
+          const timestamp = new Date(tx.timeStamp * 1000).toLocaleString("zh-TW", {
+            hour12: false,
+          });
+          const shortHash = tx.hash
+            ? tx.hash.substring(0, 6) + "..." + tx.hash.substring(tx.hash.length - 4)
+            : "";
+          const fee = tx.gasPrice && tx.gasUsed
+            ? ((parseInt(tx.gasPrice) * parseInt(tx.gasUsed)) / 1e18).toFixed(6)
+            : "-";
+          html += `
+            <tr>
+              <td>${timestamp}</td>
+              <td><a href="https://bscscan.com/tx/${tx.hash}" target="_blank" rel="noopener">${shortHash}</a></td>
+              <td>${tx.tokenSymbol}</td>
+              <td>${tx.tokenSymbol}</td>
+              <td>${fee}</td>
+            </tr>`;
+        }
+        html += "</table>";
+        txContainer.innerHTML = html;
       }
 
       // 查詢交易記錄的函數
@@ -179,34 +248,9 @@
             const nextScore = Math.min(20, Math.log2(nextThreshold));
             document.getElementById("targetScore").value = nextScore;
 
-          // 顯示交易明細
-          let transactionsHtml =
-            "<table><tr><th>時間</th><th>代幣</th><th>數量</th><th>方向</th><th>交易地址</th></tr>";
-          for (const tx of data.transactions) {
-            const timestamp = new Date(tx.timeStamp * 1000).toLocaleString(
-              "zh-TW"
-            );
-            const value = (
-              parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal))
-            ).toFixed(4);
-            const direction =
-              tx.from.toLowerCase() === walletAddress.toLowerCase()
-                ? "發送"
-                : "接收";
-            const counterparty = direction === "發送" ? tx.to : tx.from;
-
-            transactionsHtml += `
-                      <tr>
-                          <td>${timestamp}</td>
-                          <td>${tx.tokenSymbol}</td>
-                          <td>${value}</td>
-                          <td>${direction}</td>
-                          <td>${counterparty}</td>
-                      </tr>
-                  `;
-          }
-          transactionsHtml += "</table>";
-          transactions.innerHTML = transactionsHtml;
+          allTransactions = data.transactions;
+          currentWalletAddress = walletAddress;
+          renderTransactions();
 
           results.style.display = "block";
         } catch (err) {
@@ -226,6 +270,13 @@
           updateURL(walletAddress);
           await fetchTransactions(walletAddress);
         });
+
+      document
+        .getElementById("directionFilter")
+        .addEventListener("change", renderTransactions);
+      document
+        .getElementById("hideFailed")
+        .addEventListener("change", renderTransactions);
 
       // 頁面載入時，如果有錢包地址參數，自動查詢
       const urlParams = new URLSearchParams(window.location.search);
