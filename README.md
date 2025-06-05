@@ -8,6 +8,8 @@ A simple Python tool to track token transactions on BSC (Binance Smart Chain) fo
 - Query transactions by UTC date
 - Summarize transaction counts and amounts by token
 - Calculate how many trades are needed to reach a target score
+  - Target score can be set up to 20 points
+  - Enter current and per-trade volume to see the exact formula and required trades
 
 ## Setup
 
