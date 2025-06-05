@@ -181,27 +181,20 @@
 
           // 顯示交易明細
           let transactionsHtml =
-            "<table><tr><th>時間</th><th>代幣</th><th>數量</th><th>方向</th><th>交易地址</th></tr>";
+            "<table><tr><th>Hash</th><th>時間</th><th>兌換</th><th>Gas Fee</th></tr>";
           for (const tx of data.transactions) {
-            const timestamp = new Date(tx.timeStamp * 1000).toLocaleString(
+            const timestamp = new Date(tx.timestamp * 1000).toLocaleString(
               "zh-TW"
             );
-            const value = (
-              parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal))
-            ).toFixed(4);
-            const direction =
-              tx.from.toLowerCase() === walletAddress.toLowerCase()
-                ? "發送"
-                : "接收";
-            const counterparty = direction === "發送" ? tx.to : tx.from;
+            const pair = `${tx.from.symbol} → ${tx.to.symbol}`;
+            const fee = Number(tx.gas).toFixed(8);
 
             transactionsHtml += `
                       <tr>
+                          <td>${tx.hash}</td>
                           <td>${timestamp}</td>
-                          <td>${tx.tokenSymbol}</td>
-                          <td>${value}</td>
-                          <td>${direction}</td>
-                          <td>${counterparty}</td>
+                          <td>${pair}</td>
+                          <td>${fee}</td>
                       </tr>
                   `;
           }
