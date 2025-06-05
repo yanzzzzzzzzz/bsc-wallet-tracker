@@ -15,7 +15,6 @@ import uvicorn
 load_dotenv()
 API_KEY = os.getenv("BSCSCAN_API_KEY", "ZM8ACMJB67C2IXKKBF8URFUNSY")
 ADDRESS = os.getenv("WALLET_ADDRESS")
-CHAIN_ID = 56
 
 TARGET_DATE = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 target_date = datetime.now(timezone.utc).date()
@@ -34,7 +33,7 @@ class TransactionResponse(BaseModel):
     transactions: List[dict]
     summary: Dict[str, dict]
 
-def fetch_token_transfers(chain_id, address, target_date, start_block):
+def fetch_token_transfers(address, target_date, start_block):
     all_txs = []
     page = 1
     found_date = False
@@ -44,7 +43,6 @@ def fetch_token_transfers(chain_id, address, target_date, start_block):
         params = {
             "module": "account",
             "action": "tokentx",
-            "chainid": chain_id,
             "address": address,
             "startblock": start_block,
             "endblock": 99999999,
@@ -160,7 +158,7 @@ async def get_transactions(wallet_address: str):
         date_str = target_date.strftime("%Y-%m-%d")
         
         start_block = get_block_number_by_date(date_str)
-        txs = fetch_token_transfers(CHAIN_ID, wallet_address, target_date, start_block)
+        txs = fetch_token_transfers(wallet_address, target_date, start_block)
         summary = summarize_txs(txs)
         
         return TransactionResponse(
