@@ -106,13 +106,18 @@
             // 計算 BSC-USD 進度
             const busd = data.summary["BSC-USD"] ? data.summary["BSC-USD"].total : 0;
             let points = 0;
+            let currentThreshold = 0;
             let nextThreshold = 2;
-            if (busd >= 2) {
-              points = Math.floor(Math.log2(busd));
-              nextThreshold = Math.pow(2, points + 1);
+            while (busd >= nextThreshold) {
+              points++;
+              currentThreshold = nextThreshold;
+              nextThreshold *= 2;
             }
             const remaining = Math.max(0, nextThreshold - busd);
-            const percent = Math.min(100, (busd / nextThreshold) * 100);
+            const percent = Math.min(
+              100,
+              ((busd - currentThreshold) / (nextThreshold - currentThreshold)) * 100
+            );
             progressFill.style.width = percent + "%";
             progressText.textContent = `目前 ${points} 分，累積 ${busd.toFixed(2)} BSC-USD，距離下一階段還差 ${remaining.toFixed(2)} BSC-USD`;
             progressSection.style.display = "block";
