@@ -3,11 +3,10 @@ import requests
 from dotenv import load_dotenv
 from collections import defaultdict
 from datetime import datetime, timezone
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
-from fastapi.requests import Request
 from pydantic import BaseModel
 from typing import Dict, List, Optional
 import uvicorn
@@ -40,7 +39,7 @@ def fetch_token_transfers(chain_id, address, target_date, start_block):
     found_date = False
 
     while True:
-        url = "https://api.etherscan.io/v2/api"
+        url = "https://api.etherscan.io/api"
         params = {
             "module": "account",
             "action": "tokentx",
