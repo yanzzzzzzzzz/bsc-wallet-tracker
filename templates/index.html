@@ -181,27 +181,24 @@
 
           // 顯示交易明細
           let transactionsHtml =
-            "<table><tr><th>時間</th><th>代幣</th><th>數量</th><th>方向</th><th>交易地址</th></tr>";
+            "<table><tr><th>交易日期</th><th>交易 Hash</th><th>目標 Token</th><th>來源 Token</th><th>手續費 (BNB)</th></tr>";
           for (const tx of data.transactions) {
             const timestamp = new Date(tx.timeStamp * 1000).toLocaleString(
               "zh-TW"
             );
-            const value = (
-              parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal))
-            ).toFixed(4);
-            const direction =
-              tx.from.toLowerCase() === walletAddress.toLowerCase()
-                ? "發送"
-                : "接收";
-            const counterparty = direction === "發送" ? tx.to : tx.from;
+            const target = tx.to;
+            const source = tx.from;
+            const gasPrice = tx.gasPrice ? BigInt(tx.gasPrice) : 0n;
+            const gasUsed = tx.gasUsed ? BigInt(tx.gasUsed) : 0n;
+            const fee = Number(gasPrice * gasUsed) / 1e18;
 
             transactionsHtml += `
                       <tr>
                           <td>${timestamp}</td>
-                          <td>${tx.tokenSymbol}</td>
-                          <td>${value}</td>
-                          <td>${direction}</td>
-                          <td>${counterparty}</td>
+                          <td>${tx.hash}</td>
+                          <td>${target}</td>
+                          <td>${source}</td>
+                          <td>${fee.toFixed(6)}</td>
                       </tr>
                   `;
           }
