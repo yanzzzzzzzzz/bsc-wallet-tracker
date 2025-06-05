@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 import uvicorn
 
 load_dotenv()
-API_KEY = os.getenv("ETHERSCAN_API_KEY")
+API_KEY = os.getenv("BSCSCAN_API_KEY", "ZM8ACMJB67C2IXKKBF8URFUNSY")
 ADDRESS = os.getenv("WALLET_ADDRESS")
 CHAIN_ID = 56
 
@@ -40,7 +40,7 @@ def fetch_token_transfers(chain_id, address, target_date, start_block):
     found_date = False
 
     while True:
-        url = "https://api.etherscan.io/v2/api"
+        url = "https://api.bscscan.com/api"
         params = {
             "module": "account",
             "action": "tokentx",
@@ -106,7 +106,7 @@ def get_block_number_by_date(date_str):
     dt = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     timestamp = int(dt.timestamp())
 
-    url = "https://api.etherscan.io/api"
+    url = "https://api.bscscan.com/api"
     params = {
         "module": "block",
         "action": "getblocknobytime",

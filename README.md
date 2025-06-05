@@ -36,6 +36,6 @@ python main.py
 Create a `.env` file with:
 
 ```
-ETHERSCAN_API_KEY=your_api_key
+BSCSCAN_API_KEY=ZM8ACMJB67C2IXKKBF8URFUNSY
 WALLET_ADDRESS=your_wallet_address
 ```
