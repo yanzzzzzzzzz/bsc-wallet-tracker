@@ -35,6 +35,10 @@
             <div class="progress-bar">
               <div id="progressFill" class="progress-fill"></div>
             </div>
+            <div class="progress-labels">
+              <span id="currentThresholdLabel"></span>
+              <span id="nextThresholdLabel"></span>
+            </div>
             <p id="progressText"></p>
           </div>
 
@@ -72,6 +76,8 @@
           const progressSection = document.getElementById("progressSection");
           const progressFill = document.getElementById("progressFill");
           const progressText = document.getElementById("progressText");
+          const currentThresholdLabel = document.getElementById("currentThresholdLabel");
+          const nextThresholdLabel = document.getElementById("nextThresholdLabel");
 
         // 顯示載入狀態
           loading.style.display = "block";
@@ -79,6 +85,8 @@
           results.style.display = "none";
           progressSection.style.display = "none";
           progressFill.style.width = "0%";
+          currentThresholdLabel.textContent = "";
+          nextThresholdLabel.textContent = "";
 
         try {
           const response = await fetch(`/transactions/${walletAddress}`);
@@ -119,6 +127,8 @@
               ((busd - currentThreshold) / (nextThreshold - currentThreshold)) * 100
             );
             progressFill.style.width = percent + "%";
+            currentThresholdLabel.textContent = currentThreshold.toLocaleString();
+            nextThresholdLabel.textContent = nextThreshold.toLocaleString();
             progressText.textContent = `目前 ${points} 分，累積 ${busd.toFixed(2)} BSC-USD，距離下一階段還差 ${remaining.toFixed(2)} BSC-USD`;
             progressSection.style.display = "block";
 
