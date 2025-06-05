@@ -27,19 +27,27 @@
 
       <div id="error" class="error" style="display: none"></div>
 
-      <div id="results" style="display: none">
-        <h2>今日交易記錄</h2>
+        <div id="results" style="display: none">
+          <h2>今日交易記錄</h2>
 
-        <div class="summary-section">
-          <h3>交易彙總</h3>
-          <div id="summary"></div>
-        </div>
+          <div class="progress-section" id="progressSection" style="display: none">
+            <h3>BSC-USD 進度</h3>
+            <div class="progress-bar">
+              <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <p id="progressText"></p>
+          </div>
 
-        <div class="transactions-section">
-          <h3>交易明細</h3>
-          <div id="transactions"></div>
+          <div class="summary-section">
+            <h3>交易彙總</h3>
+            <div id="summary"></div>
+          </div>
+
+          <div class="transactions-section">
+            <h3>交易明細</h3>
+            <div id="transactions"></div>
+          </div>
         </div>
-      </div>
     </div>
 
     <script>
@@ -55,17 +63,22 @@
       }
 
       // 查詢交易記錄的函數
-      async function fetchTransactions(walletAddress) {
-        const loading = document.getElementById("loading");
-        const error = document.getElementById("error");
-        const results = document.getElementById("results");
-        const summary = document.getElementById("summary");
-        const transactions = document.getElementById("transactions");
+        async function fetchTransactions(walletAddress) {
+          const loading = document.getElementById("loading");
+          const error = document.getElementById("error");
+          const results = document.getElementById("results");
+          const summary = document.getElementById("summary");
+          const transactions = document.getElementById("transactions");
+          const progressSection = document.getElementById("progressSection");
+          const progressFill = document.getElementById("progressFill");
+          const progressText = document.getElementById("progressText");
 
         // 顯示載入狀態
-        loading.style.display = "block";
-        error.style.display = "none";
-        results.style.display = "none";
+          loading.style.display = "block";
+          error.style.display = "none";
+          results.style.display = "none";
+          progressSection.style.display = "none";
+          progressFill.style.width = "0%";
 
         try {
           const response = await fetch(`/transactions/${walletAddress}`);
@@ -88,7 +101,21 @@
                   `;
           }
           summaryHtml += "</table>";
-          summary.innerHTML = summaryHtml;
+            summary.innerHTML = summaryHtml;
+
+            // 計算 BSC-USD 進度
+            const busd = data.summary["BSC-USD"] ? data.summary["BSC-USD"].total : 0;
+            let points = 0;
+            let nextThreshold = 2;
+            if (busd >= 2) {
+              points = Math.floor(Math.log2(busd));
+              nextThreshold = Math.pow(2, points + 1);
+            }
+            const remaining = Math.max(0, nextThreshold - busd);
+            const percent = Math.min(100, (busd / nextThreshold) * 100);
+            progressFill.style.width = percent + "%";
+            progressText.textContent = `目前 ${points} 分，累積 ${busd.toFixed(2)} BSC-USD，距離下一階段還差 ${remaining.toFixed(2)} BSC-USD`;
+            progressSection.style.display = "block";
 
           // 顯示交易明細
           let transactionsHtml =
