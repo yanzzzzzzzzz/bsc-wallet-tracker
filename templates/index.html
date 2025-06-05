@@ -27,6 +27,48 @@
 
       <div id="error" class="error" style="display: none"></div>
 
+      <div class="calculator-section">
+        <h3>交易分數計算機</h3>
+        <div class="calc-form">
+          <select id="targetScore">
+            <option value="" disabled selected>選擇目標分數</option>
+            <option value="1">1 分 - 累積 2</option>
+            <option value="2">2 分 - 累積 4</option>
+            <option value="3">3 分 - 累積 8</option>
+            <option value="4">4 分 - 累積 16</option>
+            <option value="5">5 分 - 累積 32</option>
+            <option value="6">6 分 - 累積 64</option>
+            <option value="7">7 分 - 累積 128</option>
+            <option value="8">8 分 - 累積 256</option>
+            <option value="9">9 分 - 累積 512</option>
+            <option value="10">10 分 - 累積 1024</option>
+            <option value="11">11 分 - 累積 2048</option>
+            <option value="12">12 分 - 累積 4096</option>
+            <option value="13">13 分 - 累積 8192</option>
+            <option value="14">14 分 - 累積 16384</option>
+            <option value="15">15 分 - 累積 32768</option>
+            <option value="16">16 分 - 累積 65536</option>
+            <option value="17">17 分 - 累積 131072</option>
+            <option value="18">18 分 - 累積 262144</option>
+            <option value="19">19 分 - 累積 524288</option>
+            <option value="20">20 分 - 累積 1048576</option>
+          </select>
+          <input
+            type="number"
+            id="currentVolume"
+            placeholder="當前交易量 (BSC-USD)"
+          />
+          <input
+            type="number"
+            id="tradeVolume"
+            placeholder="每次交易量 (BSC-USD)"
+          />
+          <button id="calcButton" type="button">計算</button>
+        </div>
+        <p id="calcFormula"></p>
+        <p id="calcResult"></p>
+      </div>
+
         <div id="results" style="display: none">
           <h2>今日交易記錄</h2>
 
@@ -132,6 +174,11 @@
             progressText.textContent = `目前 ${points} 分，累積 ${busd.toFixed(2)} BSC-USD，距離下一階段還差 ${remaining.toFixed(2)} BSC-USD`;
             progressSection.style.display = "block";
 
+            // 更新計算機的當前交易量和目標分數
+            document.getElementById("currentVolume").value = busd.toFixed(2);
+            const nextScore = Math.min(20, Math.log2(nextThreshold));
+            document.getElementById("targetScore").value = nextScore;
+
           // 顯示交易明細
           let transactionsHtml =
             "<table><tr><th>時間</th><th>代幣</th><th>數量</th><th>方向</th><th>交易地址</th></tr>";
@@ -187,6 +234,26 @@
         document.getElementById("walletAddress").value = walletAddress;
         fetchTransactions(walletAddress);
       }
+
+      // 交易分數計算機
+      document.getElementById("calcButton").addEventListener("click", () => {
+        const score = parseInt(document.getElementById("targetScore").value);
+        const current = parseFloat(document.getElementById("currentVolume").value);
+        const volume = parseFloat(document.getElementById("tradeVolume").value);
+        const formulaEl = document.getElementById("calcFormula");
+        const resultEl = document.getElementById("calcResult");
+
+        if (!score || isNaN(current) || !volume) {
+          resultEl.textContent = "請完整輸入資料";
+          formulaEl.textContent = "";
+          return;
+        }
+
+        const targetVolume = Math.pow(2, score);
+        const times = Math.ceil((targetVolume - current) / (volume * 2));
+        formulaEl.textContent = `(${targetVolume} - ${current}) / (${volume} x 2) = ${times}`;
+        resultEl.textContent = `還需交易 ${times} 次`;
+      });
     </script>
   </body>
 </html>

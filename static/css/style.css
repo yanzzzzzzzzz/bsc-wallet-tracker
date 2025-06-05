@@ -124,6 +124,33 @@ tr:hover {
   margin-bottom: 2rem;
 }
 
+.calculator-section {
+  background: white;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.calc-form {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.calc-form input,
+.calc-form select {
+  flex: 1;
+  padding: 0.5rem;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.calc-form button {
+  padding: 0.5rem 1.5rem;
+}
+
 .progress-bar {
   width: 100%;
   background-color: #e0e0e0;
