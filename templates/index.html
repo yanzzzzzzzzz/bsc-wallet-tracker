@@ -161,6 +161,12 @@
           const shortHash = tx.hash
             ? tx.hash.substring(0, 6) + "..." + tx.hash.substring(tx.hash.length - 4)
             : "";
+          const shortFrom = tx.from
+            ? tx.from.substring(0, 6) + "..." + tx.from.substring(tx.from.length - 4)
+            : "";
+          const shortTo = tx.to
+            ? tx.to.substring(0, 6) + "..." + tx.to.substring(tx.to.length - 4)
+            : "";
           const fee = tx.gasPrice && tx.gasUsed
             ? ((parseInt(tx.gasPrice) * parseInt(tx.gasUsed)) / 1e18).toFixed(6)
             : "-";
@@ -168,8 +174,8 @@
             <tr>
               <td>${timestamp}</td>
               <td><a href="https://bscscan.com/tx/${tx.hash}" target="_blank" rel="noopener">${shortHash}</a></td>
-              <td>${tx.tokenSymbol}</td>
-              <td>${tx.tokenSymbol}</td>
+              <td>${shortFrom}</td>
+              <td>${shortTo}</td>
               <td>${fee}</td>
             </tr>`;
         }
