@@ -27,6 +27,32 @@
 
       <div id="error" class="error" style="display: none"></div>
 
+      <div class="calculator-section">
+        <h3>交易分數計算機</h3>
+        <div class="calc-form">
+          <input
+            type="number"
+            id="tradeVolume"
+            placeholder="每次交易量 (BSC-USD)"
+          />
+          <select id="targetScore">
+            <option value="" disabled selected>選擇目標分數</option>
+            <option value="1">1 分 - 累積 2</option>
+            <option value="2">2 分 - 累積 4</option>
+            <option value="3">3 分 - 累積 8</option>
+            <option value="4">4 分 - 累積 16</option>
+            <option value="5">5 分 - 累積 32</option>
+            <option value="6">6 分 - 累積 64</option>
+            <option value="7">7 分 - 累積 128</option>
+            <option value="8">8 分 - 累積 256</option>
+            <option value="9">9 分 - 累積 512</option>
+            <option value="10">10 分 - 累積 1024</option>
+          </select>
+          <button id="calcButton" type="button">計算</button>
+        </div>
+        <p id="calcResult"></p>
+      </div>
+
         <div id="results" style="display: none">
           <h2>今日交易記錄</h2>
 
@@ -187,6 +213,22 @@
         document.getElementById("walletAddress").value = walletAddress;
         fetchTransactions(walletAddress);
       }
+
+      // 交易分數計算機
+      document.getElementById("calcButton").addEventListener("click", () => {
+        const volume = parseFloat(document.getElementById("tradeVolume").value);
+        const score = parseInt(document.getElementById("targetScore").value);
+        const resultEl = document.getElementById("calcResult");
+
+        if (!volume || !score) {
+          resultEl.textContent = "請輸入交易量並選擇目標分數";
+          return;
+        }
+
+        const targetVolume = Math.pow(2, score);
+        const times = Math.ceil(targetVolume / volume);
+        resultEl.textContent = `達到 ${score} 分(累積 ${targetVolume} BSC-USD) 還需交易 ${times} 次`;
+      });
     </script>
   </body>
 </html>
