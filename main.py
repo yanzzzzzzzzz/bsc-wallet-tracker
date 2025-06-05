@@ -94,6 +94,39 @@ def summarize_txs(txs):
         summary[symbol]["total"] += value
     return summary
 
+def merge_transactions_by_hash(txs, wallet_address):
+    merged = {}
+    wallet_lower = wallet_address.lower()
+    for tx in txs:
+        h = tx["hash"]
+        m = merged.setdefault(h, {
+            "hash": h,
+            "timeStamp": tx["timeStamp"],
+            "gasPrice": tx.get("gasPrice"),
+            "gasUsed": tx.get("gasUsed"),
+            "from_tokens": set(),
+            "to_tokens": set(),
+        })
+
+        if tx["from"].lower() == wallet_lower:
+            m["from_tokens"].add(tx["tokenSymbol"])
+        if tx["to"].lower() == wallet_lower:
+            m["to_tokens"].add(tx["tokenSymbol"])
+
+    result = []
+    for m in merged.values():
+        result.append({
+            "hash": m["hash"],
+            "timeStamp": m["timeStamp"],
+            "from": ",".join(sorted(m["from_tokens"])) if m["from_tokens"] else "",
+            "to": ",".join(sorted(m["to_tokens"])) if m["to_tokens"] else "",
+            "gasPrice": m["gasPrice"],
+            "gasUsed": m["gasUsed"],
+        })
+
+    result.sort(key=lambda x: int(x["timeStamp"]), reverse=True)
+    return result
+
 def print_summary(summary, date_str):
     print(f"\n📅 {date_str} 的 Token 交易紀錄（UTC）：")
     if not summary:
@@ -163,9 +196,10 @@ async def get_transactions(wallet_address: str):
         start_block = get_block_number_by_date(date_str)
         txs = fetch_token_transfers(CHAIN_ID, wallet_address, target_date, start_block)
         summary = summarize_txs(txs)
-        
+        merged = merge_transactions_by_hash(txs, wallet_address)
+
         return TransactionResponse(
-            transactions=txs,
+            transactions=merged,
             summary=summary
         )
     except Exception as e:

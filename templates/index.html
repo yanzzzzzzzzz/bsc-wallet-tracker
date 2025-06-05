@@ -181,23 +181,24 @@
 
           // 顯示交易明細
           let transactionsHtml =
-            "<table><tr><th>交易日期</th><th>交易 Hash</th><th>目標 Token</th><th>來源 Token</th><th>手續費 (BNB)</th></tr>";
+            "<table><tr><th>交易日期</th><th>交易 Hash</th><th>From</th><th>To</th><th>手續費 (BNB)</th></tr>";
           for (const tx of data.transactions) {
-            const timestamp = new Date(tx.timeStamp * 1000).toLocaleString(
-              "zh-TW"
-            );
-            const target = tx.to;
-            const source = tx.from;
+            const d = new Date(tx.timeStamp * 1000);
+            const timestamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
+            const fromToken = tx.from;
+            const toToken = tx.to;
             const gasPrice = tx.gasPrice ? BigInt(tx.gasPrice) : 0n;
             const gasUsed = tx.gasUsed ? BigInt(tx.gasUsed) : 0n;
             const fee = Number(gasPrice * gasUsed) / 1e18;
+            const shortHash = `${tx.hash.slice(0, 6)}...${tx.hash.slice(-4)}`;
+            const hashLink = `<a href="https://bscscan.com/tx/${tx.hash}" target="_blank">${shortHash}</a>`;
 
             transactionsHtml += `
                       <tr>
                           <td>${timestamp}</td>
-                          <td>${tx.hash}</td>
-                          <td>${target}</td>
-                          <td>${source}</td>
+                          <td>${hashLink}</td>
+                          <td>${fromToken}</td>
+                          <td>${toToken}</td>
                           <td>${fee.toFixed(6)}</td>
                       </tr>
                   `;
