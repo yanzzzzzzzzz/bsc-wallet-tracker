@@ -30,6 +30,8 @@ pip install -r requirements.txt
 # Run the program
 python main.py
 ```
+Running `python main.py` launches a FastAPI server available at [http://localhost:8000](http://localhost:8000). The web UI can be accessed at this address.
+
 
 ## Configuration
 
