@@ -44,3 +44,17 @@ Create a `.env` file with:
 ETHERSCAN_API_KEY=your_api_key
 WALLET_ADDRESS=your_wallet_address
 ```
+
+## Frontend Development
+
+A Vue 3 + TypeScript frontend using Vuetify is located in the `frontend/` directory. It is built with Vite.
+
+```bash
+# install Node dependencies (requires Node.js and npm)
+cd frontend
+npm install
+npm run dev        # start development server
+npm run build       # build for production
+```
+
+The compiled files can be served by the FastAPI backend by copying the build output into the `static` directory.
