@@ -8,8 +8,9 @@
     <v-alert type="error" v-if="error" class="mb-4">{{ error }}</v-alert>
     <div v-if="loading" class="text-center my-4">
       <v-progress-circular indeterminate />
+      <p>查詢中...</p>
     </div>
-    <v-table>
+    <v-table v-else>
       <thead>
         <tr>
           <th>交易哈希</th>
@@ -50,9 +51,10 @@
       error.value = '請輸入錢包地址'
       return
     }
+    loading.value = true
     const response: TransactionResponse = await getTransactions(walletAddress.value)
     transactions.value = response.transactions
-    console.log(transactions.value)
+    loading.value = false
   }
 </script>
 
