@@ -17,42 +17,105 @@
       <v-progress-circular indeterminate />
       <p>查詢中...</p>
     </div>
-    <v-table v-else>
-      <thead>
-        <tr>
-          <th>交易哈希</th>
-          <th>時間</th>
-          <th>數量</th>
-          <th>From</th>
-          <th>To</th>
-          <th>Gas</th>
-          <th>狀態</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="transaction in transactions" :key="transaction.hash">
-          <td class="text-wrap">{{ transaction.hash.slice(0, 10) + '...' }}</td>
-          <td>{{ formatTimestamp(transaction.timestamp) }}</td>
-          <td>{{ transaction.amount }}</td>
-          <td>{{ transaction.from.symbol === 'BSC-USD' ? 'USDT' : transaction.from.symbol }}</td>
-          <td>{{ transaction.to.symbol === 'BSC-USD' ? 'USDT' : transaction.to.symbol }}</td>
-          <td>{{ transaction.gas }}</td>
-          <td>{{ transaction.status }}</td>
-        </tr>
-      </tbody>
-    </v-table>
+    <div v-else>
+      <div v-if="transactions.length !== 0">
+        <section class="mb-4">
+          <h2 class="mb-4">交易總覽</h2>
+          <v-row>
+            <v-col cols="12" sm="6" md="3">
+              <v-card class="mx-auto" elevation="2">
+                <v-card-text>
+                  <div class="text-h6 mb-2">今日交易量</div>
+                  <div class="text-h6">{{ todayTransactions }}</div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+            <v-col cols="12" sm="6" md="3">
+              <v-card class="mx-auto" elevation="2">
+                <v-card-text>
+                  <div class="text-h6 mb-2">今日交易盈虧</div>
+                  <div class="text-h6">{{ todayProfitLoss }}</div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+            <v-col cols="12" sm="6" md="3">
+              <v-card class="mx-auto" elevation="2">
+                <v-card-text>
+                  <div class="text-h6 mb-2">消耗手續費Gas</div>
+                  <div class="text-h6">{{ totalGas }}</div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+            <v-col cols="12" sm="6" md="3">
+              <v-card class="mx-auto" elevation="2">
+                <v-card-text>
+                  <div class="text-h6 mb-2">今日積分</div>
+                  <div class="text-h6">{{ todayPoints }}</div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </section>
+        <section>
+          <v-table>
+            <thead>
+              <tr>
+                <th>交易Hash</th>
+                <th>時間</th>
+                <th>數量</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Gas</th>
+                <th>狀態</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="transaction in transactions" :key="transaction.hash">
+                <td class="text-wrap">{{ transaction.hash.slice(0, 10) + '...' }}</td>
+                <td>{{ formatTimestamp(transaction.timestamp) }}</td>
+                <td>{{ transaction.amount }}</td>
+                <td>
+                  {{ transaction.from.symbol === 'BSC-USD' ? 'USDT' : transaction.from.symbol }}
+                </td>
+                <td>{{ transaction.to.symbol === 'BSC-USD' ? 'USDT' : transaction.to.symbol }}</td>
+                <td>{{ transaction.gas }}</td>
+                <td>{{ transaction.status }}</td>
+              </tr>
+            </tbody>
+          </v-table>
+        </section>
+      </div>
+    </div>
   </v-container>
 </template>
 
 <script lang="ts" setup>
-  import { ref } from 'vue'
+  import { ref, computed } from 'vue'
   import { getTransactions } from '@/api/transactions.api'
   import type { TransactionResponse, Transaction } from '@/models/model'
   import { formatTimestamp } from '@/utils/timeConvert'
+
   const walletAddress = ref('')
   const error = ref('')
   const loading = ref(false)
   const transactions = ref<Transaction[]>([])
+
+  const todayTransactions = computed(() => {
+    return 10000
+  })
+
+  const todayProfitLoss = computed(() => {
+    return -123
+  })
+
+  const totalGas = computed(() => {
+    return transactions.value.reduce((acc, tx) => acc + tx.gas, 0)
+  })
+
+  const todayPoints = computed(() => {
+    return 1000
+  })
+
   const handleSearch = async () => {
     if (!walletAddress.value) {
       error.value = '請輸入錢包地址'
