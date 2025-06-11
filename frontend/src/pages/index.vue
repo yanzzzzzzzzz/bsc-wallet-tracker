@@ -3,6 +3,5 @@
 </template>
 
 <script lang="ts" setup>
-import WalletTracker from '@/components/WalletTracker.vue'
+  import WalletTracker from '@/components/WalletTracker.vue'
 </script>
-
