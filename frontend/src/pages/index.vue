@@ -34,7 +34,7 @@
           <td class="text-wrap">{{ transaction.hash.slice(0, 10) + '...' }}</td>
           <td>{{ formatTimestamp(transaction.timestamp) }}</td>
           <td>{{ transaction.amount }}</td>
-          <td>{{ transaction.from.symbol }}</td>
+          <td>{{ transaction.from.symbol === 'BSC-USD' ? 'USDT' : transaction.from.symbol }}</td>
           <td>{{ transaction.to.symbol === 'BSC-USD' ? 'USDT' : transaction.to.symbol }}</td>
           <td>{{ transaction.gas }}</td>
           <td>{{ transaction.status }}</td>
