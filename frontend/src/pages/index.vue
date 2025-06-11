@@ -2,8 +2,15 @@
   <v-container class="container">
     <h1 class="text-center my-4">BSC 錢包交易查詢</h1>
     <div class="d-flex justify-center">
-      <v-text-field label="錢包地址" variant="solo-filled" v-model="walletAddress" />
-      <v-btn @click="handleSearch">查詢</v-btn>
+      <v-text-field
+        label="錢包地址"
+        variant="solo-filled"
+        v-model="walletAddress"
+        class="mr-1"
+        @keyup.enter="handleSearch"
+        append-inner-icon="mdi-magnify"
+        @click:append-inner="handleSearch"
+      />
     </div>
     <v-alert type="error" v-if="error" class="mb-4">{{ error }}</v-alert>
     <div v-if="loading" class="text-center my-4">
