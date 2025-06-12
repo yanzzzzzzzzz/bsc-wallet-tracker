@@ -9,8 +9,9 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.requests import Request
 from pydantic import BaseModel
-from typing import Dict, List
+from typing import Dict, List, Optional
 import uvicorn
+from getHistoryPrice import get_token_prices_from_moralis
 
 load_dotenv()
 API_KEY = os.getenv("ETHERSCAN_API_KEY")
@@ -83,22 +84,15 @@ def fetch_token_transfers(chain_id, address, target_date, start_block):
 
     return all_txs
 
-def summarize_txs(txs, wallet_address:str):
+def summarize_txs(txs, wallet_address:str, token_prices: Dict):
     summary = defaultdict(lambda: {"input": 0.0, "output": 0.0, "volume": 0.0})
     for tx in txs:
         decimals = int(tx["tokenDecimal"])
         value = int(tx["value"]) / (10 ** decimals)
-        #TODO 需要改成從api取得
-        if(tx["tokenSymbol"] == "BSC-USD"):
-            coin_price = 1
-        elif(tx["tokenSymbol"] == "ZKJ"):
-            coin_price = 2
-        elif(tx["tokenSymbol"] == "KOGE"):
-            coin_price = 63
-        else:
-            coin_price = 0
+        
         
         if tx["to"].lower() == wallet_address.lower():
+            coin_price = get_usd_price_by_contract_address(token_prices, tx["contractAddress"])
             summary[tx["tokenSymbol"]]["input"] += value
             summary[tx["tokenSymbol"]]["volume"] += value * coin_price * 2
         else:
@@ -208,7 +202,25 @@ def print_transaction_details(txs):
         counterparty = to_addr if direction == "🔻 Sent" else from_addr
 
         print(f"{direction} {value:.4f} {symbol} to/from {counterparty}")
-
+def extract_unique_token_info(transactions: List[Dict]) -> List[Dict[str, str]]:
+    seen_symbols = set()
+    result = []
+    
+    for tx in transactions:
+        symbol = tx.get("tokenSymbol")
+        if symbol and symbol not in seen_symbols:
+            seen_symbols.add(symbol)
+            result.append({
+                "token_address": tx.get("contractAddress"),
+                "to_block": tx.get("blockNumber")
+            })
+    
+    return result
+def get_usd_price_by_contract_address(data: List[Dict], symbol: str) -> Optional[float]:
+    for token in data:
+        if token.get("tokenAddress") == symbol:
+            return token.get("usdPrice")
+    return 1
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request, wallet_address: str = None):
     """
@@ -227,8 +239,9 @@ async def get_transactions(wallet_address: str):
         
         start_block = get_block_number_by_date(date_str)
         txs = fetch_token_transfers(CHAIN_ID, wallet_address, target_date, start_block)
-        print('txs',txs)
-        summary = summarize_txs(txs, wallet_address)
+        output = extract_unique_token_info(txs)
+        token_prices = get_token_prices_from_moralis(output)
+        summary = summarize_txs(txs, wallet_address, token_prices)
         formatted_txs = transform_transactions(txs, wallet_address)
 
         return TransactionResponse(
