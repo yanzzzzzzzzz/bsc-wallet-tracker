@@ -83,15 +83,26 @@ def fetch_token_transfers(chain_id, address, target_date, start_block):
 
     return all_txs
 
-def summarize_txs(txs):
-    summary = defaultdict(lambda: {"count": 0, "total": 0.0})
+def summarize_txs(txs, wallet_address:str):
+    summary = defaultdict(lambda: {"input": 0.0, "output": 0.0, "volume": 0.0})
     for tx in txs:
-        symbol = tx["tokenSymbol"]
         decimals = int(tx["tokenDecimal"])
         value = int(tx["value"]) / (10 ** decimals)
-
-        summary[symbol]["count"] += 1
-        summary[symbol]["total"] += value
+        #TODO 需要改成從api取得
+        if(tx["tokenSymbol"] == "BSC-USD"):
+            coin_price = 1
+        elif(tx["tokenSymbol"] == "ZKJ"):
+            coin_price = 2
+        elif(tx["tokenSymbol"] == "KOGE"):
+            coin_price = 63
+        else:
+            coin_price = 0
+        
+        if tx["to"].lower() == wallet_address.lower():
+            summary[tx["tokenSymbol"]]["input"] += value
+            summary[tx["tokenSymbol"]]["volume"] += value * coin_price * 2
+        else:
+            summary[tx["tokenSymbol"]]["output"] += value
     return summary
 
 def transform_transactions(txs: List[dict], wallet_address: str) -> List[dict]:
@@ -216,7 +227,8 @@ async def get_transactions(wallet_address: str):
         
         start_block = get_block_number_by_date(date_str)
         txs = fetch_token_transfers(CHAIN_ID, wallet_address, target_date, start_block)
-        summary = summarize_txs(txs)
+        print('txs',txs)
+        summary = summarize_txs(txs, wallet_address)
         formatted_txs = transform_transactions(txs, wallet_address)
 
         return TransactionResponse(

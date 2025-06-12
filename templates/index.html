@@ -140,42 +140,49 @@
 
           // 顯示彙總資訊
           let summaryHtml =
-            "<table><tr><th>代幣</th><th>交易次數</th><th>總數量</th></tr>";
+            "<table><tr><th>代幣</th><th>流入</th><th>流出</th></tr>";
           for (const [symbol, info] of Object.entries(data.summary)) {
             summaryHtml += `
                       <tr>
                           <td>${symbol}</td>
-                          <td>${info.count}</td>
-                          <td>${info.total.toFixed(4)}</td>
+                          <td>${info.input}</td>
+                          <td>${info.output}</td>
                       </tr>
                   `;
           }
           summaryHtml += "</table>";
             summary.innerHTML = summaryHtml;
 
-            // 計算 BSC-USD 進度
-            const busd = data.summary["BSC-USD"] ? data.summary["BSC-USD"].total : 0;
+            // 计算非BSC-USD代币的output总和
+            let totalOutput = 0;
+            for (const [symbol, info] of Object.entries(data.summary)) {
+              if (symbol !== "BSC-USD") {
+                totalOutput += info.volume;
+              }
+            }
+
+            // 計算進度
             let points = 0;
             let currentThreshold = 0;
             let nextThreshold = 2;
-            while (busd >= nextThreshold) {
+            while (totalOutput >= nextThreshold) {
               points++;
               currentThreshold = nextThreshold;
               nextThreshold *= 2;
             }
-            const remaining = Math.max(0, nextThreshold - busd);
+            const remaining = Math.max(0, nextThreshold - totalOutput);
             const percent = Math.min(
               100,
-              ((busd - currentThreshold) / (nextThreshold - currentThreshold)) * 100
+              ((totalOutput - currentThreshold) / (nextThreshold - currentThreshold)) * 100
             );
             progressFill.style.width = percent + "%";
             currentThresholdLabel.textContent = currentThreshold.toLocaleString();
             nextThresholdLabel.textContent = nextThreshold.toLocaleString();
-            progressText.textContent = `目前 ${points} 分，累積 ${busd.toFixed(2)} BSC-USD，距離下一階段還差 ${remaining.toFixed(2)} BSC-USD`;
+            progressText.textContent = `目前 ${points} 分，累積 ${totalOutput.toFixed(2)} 總輸出，距離下一階段還差 ${remaining.toFixed(2)}`;
             progressSection.style.display = "block";
 
             // 更新計算機的當前交易量和目標分數
-            document.getElementById("currentVolume").value = busd.toFixed(2);
+            document.getElementById("currentVolume").value = totalOutput.toFixed(2);
             const nextScore = Math.min(20, Math.log2(nextThreshold));
             document.getElementById("targetScore").value = nextScore;
 
