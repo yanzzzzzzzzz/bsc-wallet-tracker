@@ -69,31 +69,35 @@
         <p id="calcResult"></p>
       </div>
 
-        <div id="results" style="display: none">
-          <h2>今日交易記錄</h2>
+      <div id="results" style="display: none">
+        <h2>今日交易記錄</h2>
 
-          <div class="progress-section" id="progressSection" style="display: none">
-            <h3>BSC-USD 進度</h3>
-            <div class="progress-bar">
-              <div id="progressFill" class="progress-fill"></div>
-            </div>
-            <div class="progress-labels">
-              <span id="currentThresholdLabel"></span>
-              <span id="nextThresholdLabel"></span>
-            </div>
-            <p id="progressText"></p>
+        <div
+          class="progress-section"
+          id="progressSection"
+          style="display: none"
+        >
+          <h3>BSC-USD 進度</h3>
+          <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
           </div>
-
-          <div class="summary-section">
-            <h3>交易彙總</h3>
-            <div id="summary"></div>
+          <div class="progress-labels">
+            <span id="currentThresholdLabel"></span>
+            <span id="nextThresholdLabel"></span>
           </div>
-
-          <div class="transactions-section">
-            <h3>交易明細</h3>
-            <div id="transactions"></div>
-          </div>
+          <p id="progressText"></p>
         </div>
+
+        <div class="summary-section">
+          <h3>交易彙總</h3>
+          <div id="summary"></div>
+        </div>
+
+        <div class="transactions-section">
+          <h3>交易明細</h3>
+          <div id="transactions"></div>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -109,26 +113,29 @@
       }
 
       // 查詢交易記錄的函數
-        async function fetchTransactions(walletAddress) {
-          const loading = document.getElementById("loading");
-          const error = document.getElementById("error");
-          const results = document.getElementById("results");
-          const summary = document.getElementById("summary");
-          const transactions = document.getElementById("transactions");
-          const progressSection = document.getElementById("progressSection");
-          const progressFill = document.getElementById("progressFill");
-          const progressText = document.getElementById("progressText");
-          const currentThresholdLabel = document.getElementById("currentThresholdLabel");
-          const nextThresholdLabel = document.getElementById("nextThresholdLabel");
+      async function fetchTransactions(walletAddress) {
+        const loading = document.getElementById("loading");
+        const error = document.getElementById("error");
+        const results = document.getElementById("results");
+        const summary = document.getElementById("summary");
+        const transactions = document.getElementById("transactions");
+        const progressSection = document.getElementById("progressSection");
+        const progressFill = document.getElementById("progressFill");
+        const progressText = document.getElementById("progressText");
+        const currentThresholdLabel = document.getElementById(
+          "currentThresholdLabel"
+        );
+        const nextThresholdLabel =
+          document.getElementById("nextThresholdLabel");
 
         // 顯示載入狀態
-          loading.style.display = "block";
-          error.style.display = "none";
-          results.style.display = "none";
-          progressSection.style.display = "none";
-          progressFill.style.width = "0%";
-          currentThresholdLabel.textContent = "";
-          nextThresholdLabel.textContent = "";
+        loading.style.display = "block";
+        error.style.display = "none";
+        results.style.display = "none";
+        progressSection.style.display = "none";
+        progressFill.style.width = "0%";
+        currentThresholdLabel.textContent = "";
+        nextThresholdLabel.textContent = "";
 
         try {
           const response = await fetch(`/transactions/${walletAddress}`);
@@ -141,7 +148,7 @@
           // 顯示彙總資訊
           let summaryHtml =
             "<table><tr><th>代幣</th><th>流入</th><th>流出</th></tr>";
-          for (const [symbol, info] of Object.entries(data.summary)) {
+          for (const [symbol, info] of Object.entries(data.summary.tokens)) {
             summaryHtml += `
                       <tr>
                           <td>${symbol}</td>
@@ -151,40 +158,40 @@
                   `;
           }
           summaryHtml += "</table>";
-            summary.innerHTML = summaryHtml;
+          summary.innerHTML = summaryHtml;
 
-            // 计算非BSC-USD代币的output总和
-            let totalOutput = 0;
-            for (const [symbol, info] of Object.entries(data.summary)) {
-              if (symbol !== "BSC-USD") {
-                totalOutput += info.volume;
-              }
-            }
+          // 计算非BSC-USD代币的output总和
+          let totalOutput = data.summary.total_volume;
 
-            // 計算進度
-            let points = 0;
-            let currentThreshold = 0;
-            let nextThreshold = 2;
-            while (totalOutput >= nextThreshold) {
-              points++;
-              currentThreshold = nextThreshold;
-              nextThreshold *= 2;
-            }
-            const remaining = Math.max(0, nextThreshold - totalOutput);
-            const percent = Math.min(
-              100,
-              ((totalOutput - currentThreshold) / (nextThreshold - currentThreshold)) * 100
-            );
-            progressFill.style.width = percent + "%";
-            currentThresholdLabel.textContent = currentThreshold.toLocaleString();
-            nextThresholdLabel.textContent = nextThreshold.toLocaleString();
-            progressText.textContent = `目前 ${points} 分，累積 ${totalOutput.toFixed(2)} 總輸出，距離下一階段還差 ${remaining.toFixed(2)}`;
-            progressSection.style.display = "block";
+          // 計算進度
+          let points = 0;
+          let currentThreshold = 0;
+          let nextThreshold = 2;
+          while (totalOutput >= nextThreshold) {
+            points++;
+            currentThreshold = nextThreshold;
+            nextThreshold *= 2;
+          }
+          const remaining = Math.max(0, nextThreshold - totalOutput);
+          const percent = Math.min(
+            100,
+            ((totalOutput - currentThreshold) /
+              (nextThreshold - currentThreshold)) *
+              100
+          );
+          progressFill.style.width = percent + "%";
+          currentThresholdLabel.textContent = currentThreshold.toLocaleString();
+          nextThresholdLabel.textContent = nextThreshold.toLocaleString();
+          progressText.textContent = `目前 ${points} 分，累積 ${totalOutput.toFixed(
+            2
+          )} 總輸出，距離下一階段還差 ${remaining.toFixed(2)}`;
+          progressSection.style.display = "block";
 
-            // 更新計算機的當前交易量和目標分數
-            document.getElementById("currentVolume").value = totalOutput.toFixed(2);
-            const nextScore = Math.min(20, Math.log2(nextThreshold));
-            document.getElementById("targetScore").value = nextScore;
+          // 更新計算機的當前交易量和目標分數
+          document.getElementById("currentVolume").value =
+            totalOutput.toFixed(2);
+          const nextScore = Math.min(20, Math.log2(nextThreshold));
+          document.getElementById("targetScore").value = nextScore;
 
           // 顯示交易明細
           let transactionsHtml =
@@ -238,7 +245,9 @@
       // 交易分數計算機
       document.getElementById("calcButton").addEventListener("click", () => {
         const score = parseInt(document.getElementById("targetScore").value);
-        const current = parseFloat(document.getElementById("currentVolume").value);
+        const current = parseFloat(
+          document.getElementById("currentVolume").value
+        );
         const volume = parseFloat(document.getElementById("tradeVolume").value);
         const formulaEl = document.getElementById("calcFormula");
         const resultEl = document.getElementById("calcResult");

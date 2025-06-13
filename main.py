@@ -9,7 +9,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.requests import Request
 from pydantic import BaseModel
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 import uvicorn
 from getHistoryPrice import get_token_prices_from_moralis
 
@@ -22,6 +22,27 @@ CHAIN_ID = 56
 TARGET_DATE = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 target_date = datetime.now(timezone.utc).date()
 
+STABLE_COINS = {
+    "BSC-USD",
+    "USDC",
+    "USDT",
+    "BUSD",
+    "DAI",
+    "TUSD",
+    "USDP",
+    "USDD",
+    "GUSD",
+    "FRAX",
+    "LUSD",
+    "USDJ",
+    "USDK",
+    "USDN",
+    "USDQ",
+    "USDX",
+    "USDY",
+    "USDZ"
+}
+
 app = FastAPI(
     title="BSC Wallet Transaction Tracker API",
     description="API for tracking BEP-20 token transactions on BSC",
@@ -32,9 +53,18 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
+class TokenSummary(BaseModel):
+    input: float
+    output: float
+    volume: float
+
+class TransactionSummary(BaseModel):
+    tokens: Dict[str, TokenSummary]
+    total_volume: float
+
 class TransactionResponse(BaseModel):
     transactions: List[dict]
-    summary: Dict[str, dict]
+    summary: TransactionSummary
 
 def fetch_token_transfers(chain_id, address, target_date, start_block):
     all_txs = []
@@ -85,19 +115,28 @@ def fetch_token_transfers(chain_id, address, target_date, start_block):
     return all_txs
 
 def summarize_txs(txs, wallet_address:str, token_prices: Dict):
-    summary = defaultdict(lambda: {"input": 0.0, "output": 0.0, "volume": 0.0})
+    token_summary = defaultdict(lambda: {"input": 0.0, "output": 0.0, "volume": 0.0})
+    total_volume = 0.0
+    
     for tx in txs:
         decimals = int(tx["tokenDecimal"])
         value = int(tx["value"]) / (10 ** decimals)
         
-        
         if tx["to"].lower() == wallet_address.lower():
             coin_price = get_usd_price_by_contract_address(token_prices, tx["contractAddress"])
-            summary[tx["tokenSymbol"]]["input"] += value
-            summary[tx["tokenSymbol"]]["volume"] += value * coin_price * 2
+            token_summary[tx["tokenSymbol"]]["input"] += value
+            volume = value * coin_price * 2
+            token_summary[tx["tokenSymbol"]]["volume"] += volume
+            
+            if tx["tokenSymbol"] not in STABLE_COINS:
+                total_volume += volume
         else:
-            summary[tx["tokenSymbol"]]["output"] += value
-    return summary
+            token_summary[tx["tokenSymbol"]]["output"] += value
+    
+    return TransactionSummary(
+        tokens=token_summary,
+        total_volume=total_volume
+    )
 
 def transform_transactions(txs: List[dict], wallet_address: str) -> List[dict]:
     """Group raw token transfer events by transaction hash and
@@ -242,7 +281,7 @@ async def get_transactions(wallet_address: str):
         token_prices = get_token_prices_from_moralis(output)
         summary = summarize_txs(txs, wallet_address, token_prices)
         formatted_txs = transform_transactions(txs, wallet_address)
-
+        
         return TransactionResponse(
             transactions=formatted_txs,
             summary=summary
