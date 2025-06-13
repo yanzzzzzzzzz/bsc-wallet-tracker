@@ -148,7 +148,6 @@ def transform_transactions(txs: List[dict], wallet_address: str) -> List[dict]:
             "amount": amount,
             "from": from_info,
             "to": to_info,
-            "amountUSD": None,
         })
 
     return result
