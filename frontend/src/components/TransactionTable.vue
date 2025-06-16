@@ -15,11 +15,11 @@
           <td class="text-wrap">{{ tx.hash.slice(0, 10) + '...' }}</td>
           <td>{{ formatTimestamp(tx.timestamp) }}</td>
           <td>
-            <div>{{ tx.from.symbol === 'BSC-USD' ? 'USDT' : tx.from.symbol }}</div>
+            <div>{{ tx.from.symbol }}</div>
             <div class="amount">{{ formatAmount(tx.from.amount) }}</div>
           </td>
           <td>
-            <div>{{ tx.to.symbol === 'BSC-USD' ? 'USDT' : tx.to.symbol }}</div>
+            <div>{{ tx.to.symbol }}</div>
             <div class="amount">{{ formatAmount(tx.to.amount) }}</div>
           </td>
           <td>{{ tx.gas }}</td>

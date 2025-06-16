@@ -187,13 +187,13 @@ def transform_transactions(txs: List[dict], wallet_address: str) -> List[dict]:
             "status": "success",
             "from": {
                 "address": from_event["contractAddress"],
-                "symbol": from_event["tokenSymbol"],
+                "symbol": 'USDT' if from_event["tokenSymbol"] == 'BSC-USD' else from_event["tokenSymbol"],
                 "amount": amount,
                 "decimals": int(from_event["tokenDecimal"]),
             },
             "to": {
                 "address": to_event["contractAddress"],
-                "symbol": to_event["tokenSymbol"],
+                "symbol": 'USDT' if to_event["tokenSymbol"] == 'BSC-USD' else from_event["tokenSymbol"],
                 "amount": return_amount,
                 "decimals": int(to_event["tokenDecimal"]),
             },
