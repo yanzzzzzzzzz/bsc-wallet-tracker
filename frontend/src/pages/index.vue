@@ -27,17 +27,50 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed } from 'vue'
+  import { ref, computed, onMounted } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
   import { getTransactions } from '@/api/transactions.api'
   import type { TransactionResponse, Transaction, Summary } from '@/models/model'
   import TransactionSummary from '../components/TransactionSummary.vue'
   import TransactionTable from '../components/TransactionTable.vue'
   import _ from 'lodash'
+
+  interface RouteParams {
+    address?: string
+  }
+
+  const route = useRoute()
+  const router = useRouter()
   const walletAddress = ref('')
   const error = ref('')
   const loading = ref(false)
   const transactions = ref<Transaction[]>([])
   const summary = ref<Summary>()
+
+  const fetchTransactions = async (address: string) => {
+    if (!address) {
+      error.value = '請輸入錢包地址'
+      return
+    }
+    loading.value = true
+    try {
+      const response: TransactionResponse = await getTransactions(address)
+      transactions.value = response.transactions
+      summary.value = response.summary
+    } catch (err) {
+      error.value = '查詢失敗，請稍後再試'
+    } finally {
+      loading.value = false
+    }
+  }
+
+  onMounted(() => {
+    const address = (route.params as RouteParams).address
+    if (address) {
+      walletAddress.value = address
+      fetchTransactions(address)
+    }
+  })
 
   const totalGas = computed(() => {
     return _.round(
@@ -51,11 +84,14 @@
       error.value = '請輸入錢包地址'
       return
     }
-    loading.value = true
-    const response: TransactionResponse = await getTransactions(walletAddress.value)
-    transactions.value = response.transactions
-    summary.value = response.summary
-    loading.value = false
+    router.push(`/${walletAddress.value}`)
+    await reset()
+    await fetchTransactions(walletAddress.value)
+  }
+  const reset = async () => {
+    transactions.value = []
+    summary.value = undefined
+    error.value = ''
   }
 </script>
 
