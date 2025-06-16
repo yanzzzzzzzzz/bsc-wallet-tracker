@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from typing import Dict, List, Optional, Union
 import uvicorn
 from getHistoryPrice import get_token_prices_from_moralis
+from getPrice import get_crypto_price
 
 load_dotenv()
 API_KEY = os.getenv("ETHERSCAN_API_KEY")
@@ -64,6 +65,8 @@ class TransactionSummary(BaseModel):
     tokens: Dict[str, TokenSummary]
     total_volume: float
     total_profitAndLoss: float
+    total_gas_fee: float
+    total_gas_fee_usd: float
 
 class TransactionResponse(BaseModel):
     transactions: List[dict]
@@ -121,28 +124,33 @@ def summarize_txs(txs, wallet_address:str, token_prices: Dict):
     token_summary = defaultdict(lambda: {"input": 0.0, "output": 0.0, "volume": 0.0, "profitAndLoss": 0.0})
     total_volume = 0.0
     total_profitAndLoss = 0.0
+    total_gas_fee = 0.0
+    total_gas_fee_usd = 0.0
     for tx in txs:
         decimals = int(tx["tokenDecimal"])
         value = int(tx["value"]) / (10 ** decimals)
-        coin_price = get_usd_price_by_contract_address(token_prices, tx["contractAddress"])
+        symbol = tx["tokenSymbol"]
+        coin_price = token_prices.get(symbol, 1)
         usd_value = value * coin_price
+        total_gas_fee += int(tx['gasUsed']) * int(tx['gasPrice']) / 10**18
         if tx["to"].lower() == wallet_address.lower():
-            token_summary[tx["tokenSymbol"]]["input"] += value
-            token_summary[tx["tokenSymbol"]]["volume"] += usd_value * 2
-            token_summary[tx["tokenSymbol"]]["profitAndLoss"] += usd_value
-            if tx["tokenSymbol"] not in STABLE_COINS:
-                total_volume += usd_value * 2
+            token_summary[symbol]["input"] += value
+            token_summary[symbol]["volume"] += usd_value * 2
+            token_summary[symbol]["profitAndLoss"] += usd_value
         else:
-            token_summary[tx["tokenSymbol"]]["output"] += value
-            token_summary[tx["tokenSymbol"]]["profitAndLoss"] -= usd_value
+            token_summary[symbol]["output"] += value
+            token_summary[symbol]["profitAndLoss"] -= usd_value
+            if symbol in STABLE_COINS:
+                total_volume += usd_value * 2
     
-    for symbol, data in token_summary.items():
-        total_profitAndLoss += data["profitAndLoss"]
-
+    total_profitAndLoss = sum(data["profitAndLoss"] for data in token_summary.values())
+    total_gas_fee_usd = total_gas_fee * token_prices.get('BNB', 600)
     return TransactionSummary(
         tokens=token_summary,
         total_volume=total_volume,
-        total_profitAndLoss=total_profitAndLoss
+        total_profitAndLoss=total_profitAndLoss,
+        total_gas_fee=total_gas_fee,
+        total_gas_fee_usd=total_gas_fee_usd
     )
 
 def transform_transactions(txs: List[dict], wallet_address: str) -> List[dict]:
@@ -264,6 +272,17 @@ def extract_unique_token_info(transactions: List[Dict]) -> List[Dict[str, str]]:
             })
     
     return result
+def extract_unique_token_symbol(transactions: List[Dict]) -> List[Dict[str, str]]:
+    seen_symbols = set()
+    result = []
+    
+    for tx in transactions:
+        symbol = tx.get("tokenSymbol")
+        if symbol and symbol not in seen_symbols:
+            seen_symbols.add(symbol)
+            result.append(symbol)
+    
+    return result
 def get_usd_price_by_contract_address(data: List[Dict], symbol: str) -> Optional[float]:
     for token in data:
         if token.get("tokenAddress") == symbol:
@@ -287,8 +306,13 @@ async def get_transactions(wallet_address: str):
         
         start_block = get_block_number_by_date(date_str)
         txs = fetch_token_transfers(CHAIN_ID, wallet_address, target_date, start_block)
-        output = extract_unique_token_info(txs)
-        token_prices = get_token_prices_from_moralis(output)
+        # output = extract_unique_token_info(txs)
+        output = extract_unique_token_symbol(txs)
+        if 'BNB' not in output:
+            output.append('BNB')
+
+        token_prices = get_crypto_price(output)
+        #token_prices = get_token_pices_from_fake(output)
         summary = summarize_txs(txs, wallet_address, token_prices)
         formatted_txs = transform_transactions(txs, wallet_address)
         
