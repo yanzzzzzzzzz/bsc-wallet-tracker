@@ -20,12 +20,12 @@ export interface TokenSummary {
   profitAndLoss: number
   volume: number
 }
-export interface TransactionSummary {
+export interface Summary {
   tokens: Record<string, TokenSummary>
   total_volume: number
   total_profitAndLoss: number
 }
 export interface TransactionResponse {
   transactions: Transaction[]
-  summary: TransactionSummary
+  summary: Summary
 }
