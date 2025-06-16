@@ -1,6 +1,6 @@
 <template>
   <v-container class="container">
-    <h1 class="text-center my-4">BSC 錢包交易查詢</h1>
+    <h1 class="text-center my-4">BSC 錢包每日交易查詢</h1>
     <div class="d-flex justify-center">
       <v-text-field
         label="錢包地址"
