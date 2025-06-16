@@ -26,7 +26,7 @@
               <v-card class="mx-auto" elevation="2">
                 <v-card-text>
                   <div class="text-h6 mb-2">今日交易量</div>
-                  <div class="text-h6">{{ todayTransactions }}</div>
+                  <div class="text-h6">{{ summary?.total_volume }}</div>
                 </v-card-text>
               </v-card>
             </v-col>
@@ -34,7 +34,7 @@
               <v-card class="mx-auto" elevation="2">
                 <v-card-text>
                   <div class="text-h6 mb-2">今日交易盈虧</div>
-                  <div class="text-h6">{{ todayProfitLoss }}</div>
+                  <div class="text-h6">{{ summary?.total_profitAndLoss }}</div>
                 </v-card-text>
               </v-card>
             </v-col>
@@ -92,21 +92,14 @@
 <script lang="ts" setup>
   import { ref, computed } from 'vue'
   import { getTransactions } from '@/api/transactions.api'
-  import type { TransactionResponse, Transaction } from '@/models/model'
+  import type { TransactionResponse, Transaction, TransactionSummary } from '@/models/model'
   import { formatTimestamp } from '@/utils/timeConvert'
 
   const walletAddress = ref('')
   const error = ref('')
   const loading = ref(false)
   const transactions = ref<Transaction[]>([])
-
-  const todayTransactions = computed(() => {
-    return 10000
-  })
-
-  const todayProfitLoss = computed(() => {
-    return -123
-  })
+  const summary = ref<TransactionSummary>()
 
   const totalGas = computed(() => {
     return transactions.value.reduce((acc, tx) => acc + tx.gas, 0)
@@ -124,6 +117,7 @@
     loading.value = true
     const response: TransactionResponse = await getTransactions(walletAddress.value)
     transactions.value = response.transactions
+    summary.value = response.summary
     loading.value = false
   }
 </script>

@@ -1,26 +1,31 @@
 export interface AddressInfo {
   address: string
-  symbol: string
   decimals: number
+  symbol: string
 }
 
 export interface Transaction {
-  hash: string
-  timestamp: number
-  gas: number
-  status: string
   amount: number
   from: AddressInfo
+  gas: number
+  hash: string
+  status: string
+  timestamp: number
   to: AddressInfo
-  amountUSD: number | null
 }
 
 export interface TokenSummary {
-  count: number
-  total: number
+  input: number
+  output: number
+  profitAndLoss: number
+  volume: number
 }
-
+export interface TransactionSummary {
+  tokens: Record<string, TokenSummary>
+  total_volume: number
+  total_profitAndLoss: number
+}
 export interface TransactionResponse {
   transactions: Transaction[]
-  summary: Record<string, TokenSummary>
+  summary: TransactionSummary
 }
