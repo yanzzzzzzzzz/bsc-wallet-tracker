@@ -146,8 +146,6 @@ def summarize_txs(txs, wallet_address:str, token_prices: Dict):
     )
 
 def transform_transactions(txs: List[dict], wallet_address: str) -> List[dict]:
-    """Group raw token transfer events by transaction hash and
-    return data in a simplified format."""
     grouped: Dict[str, List[dict]] = defaultdict(list)
     for tx in txs:
         grouped[tx["hash"]].append(tx)
@@ -159,41 +157,46 @@ def transform_transactions(txs: List[dict], wallet_address: str) -> List[dict]:
         events.sort(key=lambda x: int(x["timeStamp"]))
         first = events[0]
         ts = int(first.get("timeStamp", 0))
-
         gas_used = int(first.get("gasUsed", 0))
         gas_price = int(first.get("gasPrice", 0))
         gas = gas_used * gas_price / 10**18
 
-        from_event = next((e for e in events if e.get("from", "").lower() == wallet_lower), None)
-        to_event = next((e for e in events if e.get("to", "").lower() == wallet_lower), None)
+        from_tokens = [
+            e for e in events
+            if e.get("from", "").lower() == wallet_lower and int(e.get("value", 0)) > 1e9
+        ]
 
-        amount = 0.0
-        from_info = {}
-        if from_event:
-            decimals = int(from_event.get("tokenDecimal", 0))
-            amount = int(from_event.get("value", 0)) / (10 ** decimals)
-            from_info = {
-                "address": from_event.get("contractAddress"),
-                "symbol": from_event.get("tokenSymbol"),
-                "decimals": decimals,
-            }
+        to_tokens = [
+            e for e in events
+            if e.get("to", "").lower() == wallet_lower and int(e.get("value", 0)) > 1e9
+        ]
 
-        to_info = {}
-        if to_event:
-            to_info = {
-                "address": to_event.get("contractAddress"),
-                "symbol": to_event.get("tokenSymbol"),
-                "decimals": int(to_event.get("tokenDecimal", 0)),
-            }
+        if not from_tokens or not to_tokens:
+            continue 
+
+        from_event = max(from_tokens, key=lambda e: int(e["value"]))
+        to_event = max(to_tokens, key=lambda e: int(e["value"]))
+
+        amount = int(from_event["value"]) / (10 ** int(from_event["tokenDecimal"]))
+        return_amount = int(to_event["value"]) / (10 ** int(to_event["tokenDecimal"]))
 
         result.append({
             "hash": tx_hash,
             "timestamp": ts,
             "gas": gas,
             "status": "success",
-            "amount": amount,
-            "from": from_info,
-            "to": to_info,
+            "from": {
+                "address": from_event["contractAddress"],
+                "symbol": from_event["tokenSymbol"],
+                "amount": amount,
+                "decimals": int(from_event["tokenDecimal"]),
+            },
+            "to": {
+                "address": to_event["contractAddress"],
+                "symbol": to_event["tokenSymbol"],
+                "amount": return_amount,
+                "decimals": int(to_event["tokenDecimal"]),
+            },
         })
 
     return result
