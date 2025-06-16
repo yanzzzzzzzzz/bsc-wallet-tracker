@@ -26,13 +26,12 @@
   import type { Summary } from '@/models/model'
   const props = defineProps<{
     summary: Summary | undefined
-    totalGas: number | undefined
   }>()
 
   const totalVolume = computed(() => _.round(props.summary?.total_volume ?? 0, 2))
   const totalProfit = computed(() => _.round(props.summary?.total_profitAndLoss ?? 0, 2))
-  const totalGasBNB = computed(() => _.round(props.totalGas ?? 0, 6))
-  const totalGasUSD = computed(() => _.round((props.totalGas ?? 0) * 651, 3)) // TODO
+  const totalGasBNB = computed(() => _.round(props.summary?.total_gas_fee ?? 0, 6))
+  const totalGasUSD = computed(() => _.round(props.summary?.total_gas_fee_usd ?? 0, 3))
   const todayPoints = computed(() => getPowerOfTwo(props.summary?.total_volume ?? 0))
   const nextPoints = computed(() =>
     _.round(getNextPowerOfTwo(totalVolume.value) - totalVolume.value, 2)

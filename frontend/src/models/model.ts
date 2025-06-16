@@ -23,8 +23,10 @@ export interface TokenSummary {
 }
 export interface Summary {
   tokens: Record<string, TokenSummary>
-  total_volume: number
+  total_gas_fee: number
+  total_gas_fee_usd: number
   total_profitAndLoss: number
+  total_volume: number
 }
 export interface TransactionResponse {
   transactions: Transaction[]

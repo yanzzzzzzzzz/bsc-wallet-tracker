@@ -23,7 +23,7 @@
     </div>
     <div v-else>
       <div v-if="transactions.length !== 0">
-        <TransactionSummary :summary="summary" :totalGas="totalGas" />
+        <TransactionSummary :summary="summary" />
         <TransactionTable :transactions="transactions" />
       </div>
     </div>
@@ -31,13 +31,12 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed, onMounted } from 'vue'
+  import { ref, onMounted } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { getTransactions } from '@/api/transactions.api'
   import type { TransactionResponse, Transaction, Summary } from '@/models/model'
   import TransactionSummary from '../components/TransactionSummary.vue'
   import TransactionTable from '../components/TransactionTable.vue'
-  import _ from 'lodash'
 
   interface RouteParams {
     address?: string
@@ -74,13 +73,6 @@
       walletAddress.value = address
       fetchTransactions(address)
     }
-  })
-
-  const totalGas = computed(() => {
-    return _.round(
-      transactions.value.reduce((acc, tx) => acc + tx.gas, 0),
-      6
-    )
   })
 
   const handleSearch = async () => {
