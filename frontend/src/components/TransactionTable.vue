@@ -12,7 +12,16 @@
       </thead>
       <tbody>
         <tr v-for="tx in transactions" :key="tx.hash">
-          <td class="text-wrap">{{ tx.hash.slice(0, 10) + '...' }}</td>
+          <td class="text-wrap">
+            <a
+              :href="`https://bscscan.com/tx/${tx.hash}`"
+              target="_blank"
+              class="d-inline-flex align-center"
+            >
+              {{ tx.hash.slice(0, 10) + '...' }}
+              <v-icon size="small" class="ml-1">mdi-open-in-new</v-icon>
+            </a>
+          </td>
           <td>{{ formatTimestamp(tx.timestamp) }}</td>
           <td>
             <div>{{ tx.from.symbol }}</div>
