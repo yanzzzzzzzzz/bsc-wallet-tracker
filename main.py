@@ -28,6 +28,7 @@ STABLE_COINS = {
     "USDT",
     "BUSD",
     "DAI",
+    "FDUSD",
     "TUSD",
     "USDP",
     "USDD",
@@ -57,10 +58,12 @@ class TokenSummary(BaseModel):
     input: float
     output: float
     volume: float
+    profitAndLoss: float
 
 class TransactionSummary(BaseModel):
     tokens: Dict[str, TokenSummary]
     total_volume: float
+    total_profitAndLoss: float
 
 class TransactionResponse(BaseModel):
     transactions: List[dict]
@@ -115,27 +118,31 @@ def fetch_token_transfers(chain_id, address, target_date, start_block):
     return all_txs
 
 def summarize_txs(txs, wallet_address:str, token_prices: Dict):
-    token_summary = defaultdict(lambda: {"input": 0.0, "output": 0.0, "volume": 0.0})
+    token_summary = defaultdict(lambda: {"input": 0.0, "output": 0.0, "volume": 0.0, "profitAndLoss": 0.0})
     total_volume = 0.0
-    
+    total_profitAndLoss = 0.0
     for tx in txs:
         decimals = int(tx["tokenDecimal"])
         value = int(tx["value"]) / (10 ** decimals)
-        
+        coin_price = get_usd_price_by_contract_address(token_prices, tx["contractAddress"])
+        usd_value = value * coin_price
         if tx["to"].lower() == wallet_address.lower():
-            coin_price = get_usd_price_by_contract_address(token_prices, tx["contractAddress"])
             token_summary[tx["tokenSymbol"]]["input"] += value
-            volume = value * coin_price * 2
-            token_summary[tx["tokenSymbol"]]["volume"] += volume
-            
+            token_summary[tx["tokenSymbol"]]["volume"] += usd_value * 2
+            token_summary[tx["tokenSymbol"]]["profitAndLoss"] += usd_value
             if tx["tokenSymbol"] not in STABLE_COINS:
-                total_volume += volume
+                total_volume += usd_value * 2
         else:
             token_summary[tx["tokenSymbol"]]["output"] += value
+            token_summary[tx["tokenSymbol"]]["profitAndLoss"] -= usd_value
     
+    for symbol, data in token_summary.items():
+        total_profitAndLoss += data["profitAndLoss"]
+
     return TransactionSummary(
         tokens=token_summary,
-        total_volume=total_volume
+        total_volume=total_volume,
+        total_profitAndLoss=total_profitAndLoss
     )
 
 def transform_transactions(txs: List[dict], wallet_address: str) -> List[dict]:
