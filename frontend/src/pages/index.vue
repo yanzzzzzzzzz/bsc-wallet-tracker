@@ -26,7 +26,7 @@
               <v-card class="mx-auto" elevation="2">
                 <v-card-text>
                   <div class="text-h6 mb-2">今日交易量</div>
-                  <div class="text-h6">{{ summary?.total_volume }}</div>
+                  <div class="text-h6">{{ totalVolume }}</div>
                 </v-card-text>
               </v-card>
             </v-col>
@@ -34,7 +34,7 @@
               <v-card class="mx-auto" elevation="2">
                 <v-card-text>
                   <div class="text-h6 mb-2">今日交易盈虧</div>
-                  <div class="text-h6">{{ summary?.total_profitAndLoss }}</div>
+                  <div class="text-h6">{{ totalProfit }}</div>
                 </v-card-text>
               </v-card>
             </v-col>
@@ -94,7 +94,8 @@
   import { getTransactions } from '@/api/transactions.api'
   import type { TransactionResponse, Transaction, TransactionSummary } from '@/models/model'
   import { formatTimestamp } from '@/utils/timeConvert'
-
+  import { getPowerOfTwo } from '@/utils/points'
+  import _ from 'lodash'
   const walletAddress = ref('')
   const error = ref('')
   const loading = ref(false)
@@ -102,13 +103,23 @@
   const summary = ref<TransactionSummary>()
 
   const totalGas = computed(() => {
-    return transactions.value.reduce((acc, tx) => acc + tx.gas, 0)
+    return _.round(
+      transactions.value.reduce((acc, tx) => acc + tx.gas, 0),
+      6
+    )
   })
 
   const todayPoints = computed(() => {
-    return 1000
+    return summary.value?.total_volume == null ? 0 : getPowerOfTwo(summary.value.total_volume)
   })
-
+  const totalVolume = computed(() => {
+    return summary?.value?.total_volume == null ? 0 : _.round(summary.value.total_volume, 1)
+  })
+  const totalProfit = computed(() => {
+    return summary?.value?.total_profitAndLoss == null
+      ? 0
+      : _.round(summary.value.total_profitAndLoss, 1)
+  })
   const handleSearch = async () => {
     if (!walletAddress.value) {
       error.value = '請輸入錢包地址'
