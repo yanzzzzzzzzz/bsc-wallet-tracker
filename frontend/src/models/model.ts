@@ -1,5 +1,6 @@
 export interface AddressInfo {
   address: string
+  amount: number
   decimals: number
   symbol: string
 }

@@ -5,22 +5,24 @@
         <tr>
           <th>交易Hash</th>
           <th>時間</th>
-          <th>數量</th>
           <th>From</th>
           <th>To</th>
           <th>Gas</th>
-          <th>狀態</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="tx in transactions" :key="tx.hash">
           <td class="text-wrap">{{ tx.hash.slice(0, 10) + '...' }}</td>
           <td>{{ formatTimestamp(tx.timestamp) }}</td>
-          <td>{{ tx.amount }}</td>
-          <td>{{ tx.from.symbol === 'BSC-USD' ? 'USDT' : tx.from.symbol }}</td>
-          <td>{{ tx.to.symbol === 'BSC-USD' ? 'USDT' : tx.to.symbol }}</td>
+          <td>
+            <div>{{ tx.from.symbol === 'BSC-USD' ? 'USDT' : tx.from.symbol }}</div>
+            <div class="amount">{{ formatAmount(tx.from.amount) }}</div>
+          </td>
+          <td>
+            <div>{{ tx.to.symbol === 'BSC-USD' ? 'USDT' : tx.to.symbol }}</div>
+            <div class="amount">{{ formatAmount(tx.to.amount) }}</div>
+          </td>
           <td>{{ tx.gas }}</td>
-          <td>{{ tx.status }}</td>
         </tr>
       </tbody>
     </v-table>
@@ -34,10 +36,24 @@
   defineProps<{
     transactions: Transaction[]
   }>()
+
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat('zh-TW', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 6,
+    }).format(amount)
+  }
 </script>
 
 <style scoped>
   .text-wrap {
     word-break: break-all;
+  }
+
+  .amount {
+    font-family: 'Roboto Mono', monospace;
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 4px;
   }
 </style>
