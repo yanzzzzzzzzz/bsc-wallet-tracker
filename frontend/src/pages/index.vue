@@ -14,8 +14,12 @@
     </div>
     <v-alert type="error" v-if="error" class="mb-4">{{ error }}</v-alert>
     <div v-if="loading" class="text-center my-4">
-      <v-progress-circular indeterminate />
-      <p>查詢中...</p>
+      <div class="skeleton-container">
+        <div class="summary-grid mb-4">
+          <v-skeleton-loader v-for="i in 4" :key="i" type="card" class="summary-card" />
+        </div>
+        <v-skeleton-loader type="table" class="mt-4" />
+      </div>
     </div>
     <div v-else>
       <div v-if="transactions.length !== 0">
@@ -103,5 +107,16 @@
   }
   .text-wrap {
     word-break: break-all;
+  }
+  .skeleton-container {
+    width: 100%;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .summary-card {
+    border-radius: 12px;
   }
 </style>
