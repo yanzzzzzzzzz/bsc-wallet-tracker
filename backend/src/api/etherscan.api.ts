@@ -1,7 +1,12 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
 dotenv.config();
-const API_KEY = '';
+
+const API_KEY = process.env.ETHERSCAN_API_KEY;
+if (!API_KEY) {
+  throw new Error('ETHERSCAN_API_KEY is not defined in environment variables');
+}
+
 const api = axios.create({
   baseURL: 'https://api.etherscan.io/api',
   timeout: 5000,
