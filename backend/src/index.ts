@@ -1,5 +1,10 @@
 import express from 'express';
-import { getBlockNoByTime } from './api/etherscan.api';
+import {
+  getBlockNoByTime,
+  getAccountTransaction,
+  TransactionResponse,
+  TokenTransaction,
+} from './api/etherscan.api';
 const app = express();
 const port = 5678;
 
@@ -12,9 +17,11 @@ app.get('/api/hello', (req, res) => {
 app.get('/api/transactions/:walletAddress', async (req, res) => {
   const walletAddress = req.params.walletAddress;
   const blockNo = await getBlockNoByTime();
-
   console.log(blockNo);
-  res.send(blockNo);
+  const response: TransactionResponse = await getAccountTransaction(walletAddress, blockNo);
+  const transactions: TokenTransaction[] = response.result;
+  console.log('transactions', transactions);
+  res.send(transactions);
 });
 
 app.listen(port, () => {
