@@ -21,12 +21,6 @@ const v2Api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-interface responseModel {
-  status: string;
-  message: string;
-  result: string;
-}
-
 export interface TokenTransaction {
   blockNumber: string;
   timeStamp: string;
